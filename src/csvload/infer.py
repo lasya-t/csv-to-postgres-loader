@@ -1,7 +1,7 @@
 """Infer Postgres column types from a sample of CSV rows.
 
 Each column starts as the narrowest type and widens when a value doesn't fit:
-    boolean -> smallint/integer/bigint -> numeric -> text
+    boolean -> integer/bigint -> numeric -> text
     date -> timestamp -> text
 Empty strings and common null markers are ignored while inferring.
 """
@@ -19,7 +19,7 @@ NUM_RE = re.compile(r"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$")
 DATE_FORMATS = ("%Y-%m-%d", "%m/%d/%Y", "%d-%b-%Y")
 TS_FORMATS = ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M")
 
-ORDER = ["boolean", "smallint", "integer", "bigint", "numeric", "date", "timestamp", "text"]
+ORDER = ["boolean", "integer", "bigint", "numeric", "date", "timestamp", "text"]
 
 
 def _parses(value: str, formats) -> str | None:
@@ -42,8 +42,7 @@ def value_type(v: str) -> str:
         if len(s) > 1 and s.startswith("0"):
             return "text"
         n = int(v)
-        if -32768 <= n <= 32767:
-            return "smallint"
+        # no smallint: a sample of small ids says little about the rest of the file
         if -2**31 <= n < 2**31:
             return "integer"
         if -2**63 <= n < 2**63:
@@ -61,7 +60,7 @@ def value_type(v: str) -> str:
 def widen(a: str | None, b: str) -> str:
     if a is None or a == b:
         return b
-    numeric = {"smallint", "integer", "bigint", "numeric"}
+    numeric = {"integer", "bigint", "numeric"}
     temporal = {"date", "timestamp"}
     if a in numeric and b in numeric:
         return max(a, b, key=ORDER.index)
