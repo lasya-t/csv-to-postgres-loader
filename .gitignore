@@ -14,3 +14,4 @@ examples/*.jsonl
 tidy.csv
 flat/
 dim_date.csv
+bench_*.csv
