@@ -95,7 +95,10 @@ def infer_schema(rows: Iterable[list[str]], header: list[str]) -> list[tuple[str
 def sniff(path: str, sample_rows: int = 5000, encoding: str = "utf-8-sig"):
     with open(path, newline="", encoding=encoding) as f:
         head = f.read(64 * 1024)
-        dialect = csv.Sniffer().sniff(head, delimiters=",;\t|")
+        try:
+            dialect = csv.Sniffer().sniff(head, delimiters=",;\t|")
+        except csv.Error:
+            dialect = csv.excel  # single-column files have no delimiter to detect
         f.seek(0)
         reader = csv.reader(f, dialect)
         header = next(reader)
